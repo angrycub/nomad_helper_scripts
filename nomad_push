@@ -1,0 +1,24 @@
+#! /bin/bash
+
+first_node=10.0.0.89
+nodes=( 10.0.0.208 10.0.0.237 10.0.0.172 10.0.0.26 10.0.0.128 )
+
+echo "🚚 Deploying nomad to /opt/nomad/bin on first node..."
+  scp nomad root@$first_node:/opt/nomad/bin/nomad-$1 
+
+echo "🚚 Deploying nomad to /opt/nomad/bin on other nodes..."
+I=0
+for Node in "${nodes[@]}"
+do
+  echo " - 📦 ${Node}"
+  scp root@$first_node:/opt/nomad/bin/nomad-$1 root@${Node}:/opt/nomad/bin/nomad-$1 &
+  pids[${I}]=$!
+  let "I++"
+done
+
+echo "⌛️ Waiting for PIDs to complete"
+for pid in ${pids[*]}
+do 
+  echo " - ⏰ Waiting for PID $pid"
+  wait $pid; 
+done;
