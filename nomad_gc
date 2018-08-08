@@ -1,0 +1,20 @@
+#! /bin/bash
+
+if [[ $# -eq 1 && "-s"="${1}" ]]
+then
+   silent=true
+else 
+   slient=false
+fi
+
+function print {
+  if [[ ${silent} != "true" ]]
+  then 
+    echo $@
+  fi
+}
+
+print -n "Running Nomad GC..."
+curl -s -XPUT http://127.0.0.1:4646/v1/system/gc
+print "Done."
+ 
