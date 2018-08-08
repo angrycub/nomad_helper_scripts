@@ -1,10 +1,24 @@
 #! /bin/bash
 
+if [[ "${NOMAD_ADDR}" = "" ]]
+then 
+	Address="http://127.0.0.1:4646"
+else 
+	Address=${NOMAD_ADDR}
+fi
+
 if [[ $# -eq 1 && "-s"="${1}" ]]
 then
    silent=true
 else 
    slient=false
+fi
+
+if [[ $# -eq 1 && "-s"="${1}" ]]
+then
+   echo "Usage:"
+   echo "  -s - Run with no output"
+   exit 1
 fi
 
 function print {
@@ -15,6 +29,11 @@ function print {
 }
 
 print -n "Running Nomad GC..."
-curl -s -XPUT http://127.0.0.1:4646/v1/system/gc
-print "Done."
- 
+curl -s -XPUT ${Address}/v1/system/gc
+if [[ $? -eq 0 ]]
+then
+	print " Done."
+else
+	print " Error."
+	curl -XPUT ${Address}/v1/system/gc
+fi
