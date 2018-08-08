@@ -1,7 +1,7 @@
 #! /bin/bash
 
-first_node=10.0.0.89
-nodes=( 10.0.0.208 10.0.0.237 10.0.0.172 10.0.0.26 10.0.0.128 )
+first_node=nomad-server-1
+nodes=( nomad-server-2 nomad-server-3 nomad-client-1 nomad-client-2 nomad-client-3 )
 
 echo "🚚 Deploying nomad to /opt/nomad/bin on first node..."
   scp nomad root@$first_node:/opt/nomad/bin/nomad-$1 
