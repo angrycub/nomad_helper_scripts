@@ -1,39 +1,51 @@
 #! /bin/bash
 
 DEST="/usr/local/bin"
+SRC="/opt/nomad/bin"
+APP="nomad"
 
-# If no parameters, display versions of Nomad in /opt/nomad/bin with the nomad_ and the linux_amd64 part
+function yaydone {
+  ls -al ${DEST}/${APP}
+  ${DEST}/${APP} version
+  exit 0
+}
+
+function switchversion {
+  if [[ -L ${DEST}/${APP} ]]
+  then
+    echo -n "Removing existing and "
+    rm -f ${DEST}/${APP}
+  fi
+  echo "Creating symlink for version ${TargetVersion}"
+  ln -s ${SRC}/${APP}-${1} ${DEST}/${APP}
+  yaydone
+}
+
+# If no parameters, display versions of Nomad in ${SRC} with the nomad_ and the linux_amd64 part
 if [[ $# -eq 0 ]]
 then
-  ls /opt/nomad/bin | sed 's/nomad-//g'
+  ls ${SRC} | sed "s/${APP}-//g"
   exit 0
 fi
 
 # Given 1 parameter set to -i, destroy any existing symlinks and create one for the given version
 if [[ $# -eq 1 && "${1}" = "-i" ]]
 then
-  select TargetVersion in $(ls /opt/nomad/bin | sed 's/nomad-//g')
+  select TargetVersion in $(ls ${SRC} | sed "s/${APP}-//g")
   do
-    if [[ -L ${DEST}/nomad ]]
-    then
-      echo -n "Removing existing and "
-      rm -f ${DEST}/nomad
-    fi
-    echo "Creating symlink for version ${TargetVersion}"
-    ln -s /opt/nomad/bin/nomad-${TargetVersion} ${DEST}/nomad
-    exit 0
+    switchversion ${TargetVersion}
   done
 fi
 
 # Given 1 parameter, destroy any existing symlinks and create one for the given version
 if [[ $# -eq 1 ]]
 then
-  if [[ -L ${DEST}/nomad ]]
-  then
-    rm -f ${DEST}/nomad
+  if [[ -f ${SRC}/${APP}-${1} ]]
+  then 
+    switchversion ${1}
+  else
+    echo "Version not found."
+    exit 1
   fi
-  ln -s /opt/nomad/bin/nomad-${1} ${DEST}/nomad
 fi
 
-ls -al ${DEST}/nomad
-${DEST}/nomad version
