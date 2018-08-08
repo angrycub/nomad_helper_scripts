@@ -1,0 +1,34 @@
+#! /bin/bash
+
+# If no parameters, display versions of Nomad in /opt/nomad/bin with the nomad_ and the linux_amd64 part
+if [[ $# -eq 0 ]]
+then
+  ls /opt/nomad/bin | sed 's/nomad-//g'
+  exit 0
+fi
+
+# Given 1 parameter set to -i, destroy any existing symlinks and create one for the given version
+if [[ $# -eq 1 && "${1}" = "-i" ]]
+then
+  select TargetVersion in $(ls /opt/nomad/bin | sed 's/nomad-//g')
+  do
+    if [[ -L /usr/local/bin/nomad ]]
+    then
+      echo -n "Removing existing and "
+      rm -f /usr/local/bin/nomad
+    fi
+    echo "Creating symlink for version ${TargetVersion}"
+    ln -s /opt/nomad/bin/nomad-${TargetVersion} /usr/local/bin/nomad
+    exit 0
+  done
+fi
+
+# Given 1 parameter, destroy any existing symlinks and create one for the given version
+if [[ $# -eq 1 ]]
+then
+  if [[ -L /usr/local/bin/nomad ]]
+  then
+    rm -f /usr/local/bin/nomad
+  fi
+  ln -s /opt/nomad/bin/nomad-${1} /usr/local/bin/nomad
+fi
