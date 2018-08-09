@@ -1,0 +1,9 @@
+#! /bin/bash
+
+for I in `nomad status | awk '{print $1}' | grep -v -e "^ID\s*$"`
+do
+  echo "Stopping ${I}..."
+  nomad stop ${1} ${I}
+done
+nomad_gc
+
