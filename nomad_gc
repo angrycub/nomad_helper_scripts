@@ -7,14 +7,15 @@ else
 	Address=${NOMAD_ADDR}
 fi
 
-if [[ $# -eq 1 && "-s"="${1}" ]]
+
+if [[ $# -eq 1 && "-s" = "${1}" ]]
 then
    silent=true
 else 
    slient=false
 fi
 
-if [[ $# -eq 1 && "-s"="${1}" ]]
+if [[ $# -ge 1 && "-s" != "${1}" ]]
 then
    echo "Usage:"
    echo "  -s - Run with no output"
