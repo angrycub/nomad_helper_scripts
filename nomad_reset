@@ -1,0 +1,44 @@
+#! /bin/bash 
+
+DATA_DIR="/opt/nomad/data/"
+CONSUL_ADDR="http://127.0.0.1:8500"
+
+function nomad_running {
+	systemctl is-active --quiet nomad
+}
+
+if nomad_running
+then
+	echo "*** Nomad is currently running... Aborting. ***"
+	exit 1
+fi
+
+Mounts=`mount | grep ${DATA_DIR} | awk '{print $3}'`
+if [[ `echo ${Mounts} | wc -l` -gt 0 ]]
+then
+  echo " * Unmounting orphaned allocation mounts..."
+  for Mount in ${Mounts}
+  do 
+    echo "   - Unmounting ${Mount}..."
+    umount ${Mount}
+  done
+else
+  echo " * Nothing to unmount."
+fi
+
+echo "Clearing out Data Directory"
+rm -rf ${DATA_DIR}/*
+
+Checks=`curl -s http://127.0.0.1:8500/v1/agent/checks | jq -r '.[] | .CheckID'`
+if [[ `echo ${Checks} | wc -l` -gt 0 ]]
+then
+  echo " * Removing stale Consul checks..."
+  for Check in ${Checks}
+  do 
+    echo "   - removing ${Check}..."
+    curl -XPUT http://127.0.0.1:8500/v1/agent/check/deregister/${Check}
+  done
+else
+  echo "* No Consul checks to remove."
+fi
+echo "Done."
