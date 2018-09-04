@@ -1,0 +1,10 @@
+#! /bin/bash
+
+JobsToStartFile="/etc/nomad.d/startup"
+
+for I in `cat ${JobsToStartFile}`
+do
+  echo "Starting ${I}..."
+  nomad run ${I}
+done
+
