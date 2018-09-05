@@ -21,7 +21,7 @@ function switchversion {
   yaydone
 }
 
-# If no parameters, display versions of Nomad in ${SRC} with the nomad_ and the linux_amd64 part
+# If no parameters, display versions of Nomad in ${SRC} with the nomad- and the linux_amd64 part
 if [[ $# -eq 0 ]]
 then
   ls ${SRC} | sed "s/${APP}-//g"
