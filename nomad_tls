@@ -1,0 +1,68 @@
+#! /bin/bash
+
+SRC="/opt/nomad/tls"
+CONFIG_DIR="/etc/nomad.d"
+APP="nomad"
+
+function yaydone {
+  ls -al ${DEST}/${APP}
+  ${DEST}/${APP} version
+  exit 0
+}
+
+function switchversion {
+  if [[ -L ${DEST}/${APP} ]]
+  then
+    echo -n "Removing existing and "
+    rm -f ${DEST}/${APP}
+  fi
+  echo "Creating symlink for version ${TargetVersion}"
+  ln -s ${SRC}/${APP}-${1} ${DEST}/${APP}
+  yaydone
+}
+
+function checkDeps {
+  if ! svn --version --quiet
+  then
+    echo " * Installing Subversion dependency"
+    sudo yum install -y svn 
+  fi
+}
+
+function printUsage {
+  echo "This will be usage information..."
+}
+
+function generateConfigFile {
+  echo "" > tls.hcl
+  
+}
+# usage
+
+# install
+
+checkDeps
+
+if [[ ! -d /opt/nomad/tls ]]
+then
+  echo " * Creating /opt/nomad/tls..."
+  mkdir /opt/nomad/tls
+fi
+
+if [[ ! -f /opt/nomad/tls/server.key ]]
+then
+  echo " * Downloading and installing TLS certificates from hashicorp/nomad..."
+  mkdir /tmp/nomad_tls
+  cd /tmp/nomad_tls
+  echo "   - copying files with SVN - this is slooooow."
+  svn export https://github.com/hashicorp/nomad/trunk/dev/tls_cluster/certs
+  echo "   - done"
+  mv certs /opt/nomad/tls
+  cd -
+  rmdir /tmp/nomad_tls
+
+fi
+
+
+# uninstall
+
