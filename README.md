@@ -16,3 +16,6 @@ These are just some bash scripts that I use to make my reproduction life at work
 
  * [cluster_push](cluster_push) - Useful for flinging files across the whole cluster from my local machine.
  * [consul_push](consul_push) - Enables me to push in Consul versions into the /opt/consul/bin folders on all of the lab machines.
+
+ * [fetch](fetch) - Helper to download any version of the Hashicorp software on
+   releases.hashicorp.com.  Usage information in the file.

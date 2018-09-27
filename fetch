@@ -1,0 +1,109 @@
+#!/bin/sh
+
+#################################################
+### Fetch Hashi Product By Version from internet
+#################################################
+
+#Set Script Name variable
+SCRIPT=`basename ${BASH_SOURCE[0]}`
+
+### # functions
+function usage () {
+  local l_MSG=$1
+  echo "Usage Error: $l_MSG"
+  echo "Usage: ${SCRIPT} -p <string>"
+  echo "  where <string> specifies the product name"
+  echo "Recognized optional command line arguments"
+  echo "-v <string>  -- specifies the target version.  Defaults to latest stable version."
+  echo "-a <string>  -- specifies the target architecture.  Defaults to \`linux_amd64\`"
+  echo "-s -- create a symlink in /usr/local/bin"
+  exit 1
+}
+
+function getLatest () {
+  # $1 should be product name
+  local LATEST_VERSION=$(curl -s https://releases.hashicorp.com/$1/ | pup a[href^="/$1"] attr{href} | awk -F/ '$3!~/(-rc|-beta)/{print $3}' | head -n 1)
+  echo "${LATEST_VERSION}"
+}
+
+function maybeCreateSymlink () {
+if [ ! -z "${CREATESYMLINK}" ]
+then
+  if [ -L "/usr/local/bin/${PRODUCT}" ]
+  then
+    rm -rf "/usr/local/bin/${PRODUCT}"
+  fi
+  ln -s "/opt/${PRODUCT}/bin/${PRODUCT}-v${VERSION}" "/usr/local/bin/${PRODUCT}"
+fi
+
+}
+
+### # starting main
+### check number of command line arguments
+NUMARGS=$#
+if [ $NUMARGS -eq 0 ]; then
+  usage 'No command line arguments specified'
+fi
+
+### Start getopts code ###
+#Parse command line flags
+#If an option should be followed by an argument, it should be followed by a ":".
+#The leading ":" suppresses error messages from
+#getopts. This is required to get my unrecognized option code to work.
+while getopts :sp:v:a: FLAG; do
+  case $FLAG in
+    p) # set option "p" specifying the product
+      PRODUCT=$OPTARG
+      ;;
+    v) # set option "f"
+      VERSION=$OPTARG
+      ;;
+    a) # set option "a"
+      ARCHITECTURE=$OPTARG
+      ;;
+    s) # set option "a"
+      CREATESYMLINK=0
+      ;;
+    *) # invalid command line arguments
+      usage "Invalid command line argument $OPTARG"
+      ;;
+  esac
+done  
+
+#shift $((OPTIND-1))  #This tells getopts to move on to the next argument.
+
+### # check that Product is not empty
+if [ -z "${PRODUCT}" ]
+then
+  usage 'Product name must be specified using option -p <string>'
+fi
+
+if [ -z "${VERSION}" ]
+then
+  ## this is conditional because there is some effort in getting the latest version
+  VERSION=$(getLatest ${PRODUCT})
+fi
+
+if [ -z "${ARCHITECTURE}" ]
+then
+  if [ "Darwin" == $(uname -s) ]
+  then 
+    ARCHITECTURE="darwin_amd64"
+  else
+    ARCHITECTURE="linux_amd64"
+  fi
+fi
+
+echo "Fetching ${PRODUCT} v${VERSION} for ${ARCHITECTURE}..."
+URL="https://releases.hashicorp.com/${PRODUCT}/${VERSION}/${PRODUCT}_${VERSION}_${ARCHITECTURE}.zip"
+TMPDIR=`mktemp -d /tmp/fetch.XXXXXXXXXX` || exit 1
+pushd ${TMPDIR} > /dev/null
+mkdir -p /opt/${PRODUCT}/bin
+wget -q ${URL} -O ${PRODUCT}.zip
+unzip -q ${PRODUCT}.zip
+mv ${PRODUCT} /opt/${PRODUCT}/bin/${PRODUCT}-v${VERSION}
+popd > /dev/null
+rm -rf ${TMPDIR}
+maybeCreateSymlink
+
+
