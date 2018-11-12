@@ -16,7 +16,7 @@ function usage () {
   echo "Recognized optional command line arguments"
   echo "-v <string>  -- specifies the target version.  Defaults to latest stable version."
   echo "-a <string>  -- specifies the target architecture.  Defaults to \`linux_amd64\`"
-  echo "-ns -- do not create a symlink in /usr/local/bin"
+  echo "-n -- do not create a symlink in /usr/local/bin"
   exit 1
 }
 
@@ -65,7 +65,7 @@ fi
 #If an option should be followed by an argument, it should be followed by a ":".
 #The leading ":" suppresses error messages from
 #getopts. This is required to get my unrecognized option code to work.
-while getopts :sp:v:a: FLAG; do
+while getopts :np:v:a: FLAG; do
   case $FLAG in
     p) # set option "p" specifying the product
       PRODUCT=$OPTARG
@@ -76,7 +76,7 @@ while getopts :sp:v:a: FLAG; do
     a) # set option "a"
       ARCHITECTURE=$OPTARG
       ;;
-    ns) # set option "ns"
+    n) # set option "ns"
       NOCREATESYMLINK=0
       ;;
     *) # invalid command line arguments
