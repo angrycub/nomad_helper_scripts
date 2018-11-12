@@ -42,7 +42,7 @@ function maybeFetchPup() {
 }
 
 function maybeCreateSymlink () {
-if [ ! -z "${NOCREATESYMLINK}" ]
+if [ -z "${NOCREATESYMLINK}" ]
 then
   if [ -L "/usr/local/bin/${PRODUCT}" ]
   then
@@ -76,7 +76,7 @@ while getopts :np:v:a: FLAG; do
     a) # set option "a"
       ARCHITECTURE=$OPTARG
       ;;
-    n) # set option "ns"
+    n) # set option "n"
       NOCREATESYMLINK=0
       ;;
     *) # invalid command line arguments
