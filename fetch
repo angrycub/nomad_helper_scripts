@@ -6,7 +6,7 @@
 
 #Set Script Name variable
 SCRIPT=`basename ${BASH_SOURCE[0]}`
-
+PUP_VERSION="v0.4.0"
 ### # functions
 function usage () {
   local l_MSG=$1
@@ -16,18 +16,33 @@ function usage () {
   echo "Recognized optional command line arguments"
   echo "-v <string>  -- specifies the target version.  Defaults to latest stable version."
   echo "-a <string>  -- specifies the target architecture.  Defaults to \`linux_amd64\`"
-  echo "-s -- create a symlink in /usr/local/bin"
+  echo "-ns -- do not create a symlink in /usr/local/bin"
   exit 1
 }
 
 function getLatest () {
   # $1 should be product name
+  maybeFetchPup
   local LATEST_VERSION=$(curl -s https://releases.hashicorp.com/$1/ | pup a[href^="/$1"] attr{href} | awk -F/ '$3!~/(-rc|-beta)/{print $3}' | head -n 1)
   echo "${LATEST_VERSION}"
 }
 
+function maybeFetchPup() {
+  if [ ! -f /usr/local/bin/pup ] 
+  then
+    mkdir -p /opt/pup/bin
+    pushd /opt/pup/bin
+    wget -q https://github.com/ericchiang/pup/releases/download/${PUP_VERSION}/pup_${PUP_VERSION}_${ARCHITECTURE}.zip
+    unzip pup_${PUP_VERSION}_${ARCHITECTURE}.zip
+    rm pup_${PUP_VERSION}_${ARCHITECTURE}.zip
+    mv pup pup_${PUP_VERSION}
+    ln -s /opt/pup/bin/pup_${PUP_VERSION} /usr/local/bin/pup
+    popd
+  fi
+}
+
 function maybeCreateSymlink () {
-if [ ! -z "${CREATESYMLINK}" ]
+if [ ! -z "${NOCREATESYMLINK}" ]
 then
   if [ -L "/usr/local/bin/${PRODUCT}" ]
   then
@@ -61,8 +76,8 @@ while getopts :sp:v:a: FLAG; do
     a) # set option "a"
       ARCHITECTURE=$OPTARG
       ;;
-    s) # set option "a"
-      CREATESYMLINK=0
+    ns) # set option "ns"
+      NOCREATESYMLINK=0
       ;;
     *) # invalid command line arguments
       usage "Invalid command line argument $OPTARG"
@@ -78,12 +93,6 @@ then
   usage 'Product name must be specified using option -p <string>'
 fi
 
-if [ -z "${VERSION}" ]
-then
-  ## this is conditional because there is some effort in getting the latest version
-  VERSION=$(getLatest ${PRODUCT})
-fi
-
 if [ -z "${ARCHITECTURE}" ]
 then
   if [ "Darwin" == $(uname -s) ]
@@ -92,6 +101,12 @@ then
   else
     ARCHITECTURE="linux_amd64"
   fi
+fi
+
+if [ -z "${VERSION}" ]
+then
+  ## this is conditional because there is some effort in getting the latest version
+  VERSION=$(getLatest ${PRODUCT})
 fi
 
 echo "Fetching ${PRODUCT} v${VERSION} for ${ARCHITECTURE}..."
