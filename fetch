@@ -70,7 +70,7 @@ while getopts :np:v:a: FLAG; do
     p) # set option "p" specifying the product
       PRODUCT=$OPTARG
       ;;
-    v) # set option "f"
+    v) # set option "v"
       VERSION=$OPTARG
       ;;
     a) # set option "a"
@@ -120,5 +120,3 @@ mv ${PRODUCT} /opt/${PRODUCT}/bin/${PRODUCT}-v${VERSION}
 popd > /dev/null
 rm -rf ${TMPDIR}
 maybeCreateSymlink
-
-
