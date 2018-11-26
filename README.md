@@ -12,7 +12,7 @@ These are just some bash scripts that I use to make my reproduction life at work
  * [nomad\_stop\_all](nomad_stop_all) - Iteratively stops all of the work in a cluster. Passes the `-purge` flag optionally.
  * [nomad_tls](nomad_tls) - Installs and conficures development TLS certs from the nomad project.
  * [nomad_version](nomad_version) - Selects a version from /opt/nomad/bin and sets it on the node.  Can be uned interactively with -i (menu) or by passing a version identifier (the file name excluding the "nomad-" part).
-
+ * [collect](collect) - WIP collection script for Nomad state data
 
  * [cluster_push](cluster_push) - Useful for flinging files across the whole cluster from my local machine.
  * [consul_push](consul_push) - Enables me to push in Consul versions into the /opt/consul/bin folders on all of the lab machines.
