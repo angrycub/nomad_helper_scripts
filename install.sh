@@ -21,4 +21,5 @@ install nomad_reset
 install nomad_start
 install nomad_stop_all  
 install nomad_version
+install nomad_job_collect
 install fetch
