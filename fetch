@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #################################################
 ### Fetch Hashi Product By Version from internet
