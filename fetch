@@ -19,7 +19,7 @@ function usage () {
   echo "-n -- do not create a symlink in /usr/local/bin"
   exit 1
 }
-
+## TODO: implement latest using `https://releases.hashicorp.com/«product»/index.json`
 function getLatest () {
   # $1 should be product name
   maybeFetchPup
