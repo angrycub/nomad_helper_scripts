@@ -28,6 +28,10 @@ echo "    📝 job by name - ${job}"
 curl -s http://127.0.0.1:4646/v1/job/${job}${pretty} > job.${job}.json
 echo "    📝 allocations for job"
 curl -s http://127.0.0.1:4646/v1/job/${job}/allocations${pretty} > job.${job}.allocations.json
+echo "    � versions for job"
+curl -s http://127.0.0.1:4646/v1/job/${job}/versions${pretty} > job.${job}.versions.json
+echo "    � summary for job"
+curl -s http://127.0.0.1:4646/v1/job/${job}/summary${pretty} > job.${job}.summary.json
 
 for alloc in `curl -s http://127.0.0.1:4646/v1/job/${job}/allocations | jq -r '.[].ID'`
 do
