@@ -14,29 +14,26 @@ outDir=${tmpDir}/${jobDir}
 mkdir ${outDir}
 cd ${outDir}
 
-pretty=""
-pretty='?pretty=true'
-
 echo "🤖 Collecting information about ${job}"
 echo "    📝 all nodes"
-curl -s http://127.0.0.1:4646/v1/nodes${pretty} > nodes.json
+curl -s http://127.0.0.1:4646/v1/nodes > nodes.json
 echo "    📝 all evaluations"
-curl -s http://127.0.0.1:4646/v1/evaluations${pretty} > evaluations.json
+curl -s http://127.0.0.1:4646/v1/evaluations > evaluations.json
 echo "    📝 all deployments"
-curl -s http://127.0.0.1:4646/v1/deployments${pretty} > deployments.json
+curl -s http://127.0.0.1:4646/v1/deployments > deployments.json
 echo "    📝 job by name - ${job}"
-curl -s http://127.0.0.1:4646/v1/job/${job}${pretty} > job.${job}.json
+curl -s http://127.0.0.1:4646/v1/job/${job} > job.${job}.json
 echo "    📝 allocations for job"
-curl -s http://127.0.0.1:4646/v1/job/${job}/allocations${pretty} > job.${job}.allocations.json
+curl -s http://127.0.0.1:4646/v1/job/${job}/allocations > job.${job}.allocations.json
 echo "    � versions for job"
-curl -s http://127.0.0.1:4646/v1/job/${job}/versions${pretty} > job.${job}.versions.json
+curl -s http://127.0.0.1:4646/v1/job/${job}/versions > job.${job}.versions.json
 echo "    � summary for job"
-curl -s http://127.0.0.1:4646/v1/job/${job}/summary${pretty} > job.${job}.summary.json
+curl -s http://127.0.0.1:4646/v1/job/${job}/summary > job.${job}.summary.json
 
 for alloc in `curl -s http://127.0.0.1:4646/v1/job/${job}/allocations | jq -r '.[].ID'`
 do
 echo "        📝 allocation ${alloc}"
-curl -s http://127.0.0.1:4646/v1/allocation/${alloc}${pretty} > allocation.${alloc}.json
+curl -s http://127.0.0.1:4646/v1/allocation/${alloc} > allocation.${alloc}.json
 done
 
 cd ${tmpDir}
