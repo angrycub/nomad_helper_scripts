@@ -89,7 +89,7 @@ fi
 
 echo "# Creating archive ${tarballFileName}"
 echo '```'
-tar -zcvf --preserve-order --sort=name ${tarballFileName} ${jobDir} 2>/dev/null
+tar --sort=name -zcvf ${tarballFileName} ${jobDir}
 echo '```'
 
 echo "# Cleaning up temp directory"
