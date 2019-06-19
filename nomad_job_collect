@@ -8,32 +8,34 @@ job=${1}
 jobDir=`echo ${job}|sed 's/\//_/g'`
 curDir=`pwd`
 
+hostname=`hostname -f`
+export NOMAD_ADDR=${NOMAD_ADDR:-"http://127.0.0.1:4646"}
 # echo "📂 Making temp directory"
 tmpDir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
 outDir=${tmpDir}/${jobDir}
 mkdir ${outDir}
 cd ${outDir}
 
-echo "🤖 Collecting information about ${job}"
+echo "� Collecting general information (hostname = ${hostname})"
 echo "    📝 all nodes"
-curl -s http://127.0.0.1:4646/v1/nodes > nodes.json
+curl -s ${NOMAD_ADDR}/v1/nodes > nodes.json
 echo "    📝 all evaluations"
-curl -s http://127.0.0.1:4646/v1/evaluations > evaluations.json
+curl -s ${NOMAD_ADDR}/v1/evaluations > evaluations.json
 echo "    📝 all deployments"
-curl -s http://127.0.0.1:4646/v1/deployments > deployments.json
+curl -s ${NOMAD_ADDR}/v1/deployments > deployments.json
 echo "    📝 job by name - ${job}"
-curl -s http://127.0.0.1:4646/v1/job/${job} > job.${job}.json
+curl -s ${NOMAD_ADDR}/v1/job/${job} > job.${job}.json
 echo "    📝 allocations for job"
-curl -s http://127.0.0.1:4646/v1/job/${job}/allocations > job.${job}.allocations.json
+curl -s ${NOMAD_ADDR}/v1/job/${job}/allocations > job.${job}.allocations.json
 echo "    � versions for job"
-curl -s http://127.0.0.1:4646/v1/job/${job}/versions > job.${job}.versions.json
+curl -s ${NOMAD_ADDR}/v1/job/${job}/versions > job.${job}.versions.json
 echo "    � summary for job"
-curl -s http://127.0.0.1:4646/v1/job/${job}/summary > job.${job}.summary.json
+curl -s ${NOMAD_ADDR}/v1/job/${job}/summary > job.${job}.summary.json
 
-for alloc in `curl -s http://127.0.0.1:4646/v1/job/${job}/allocations | jq -r '.[].ID'`
+for alloc in `curl -s ${NOMAD_ADDR}/v1/job/${job}/allocations | jq -r '.[].ID'`
 do
 echo "        📝 allocation ${alloc}"
-curl -s http://127.0.0.1:4646/v1/allocation/${alloc} > allocation.${alloc}.json
+curl -s ${NOMAD_ADDR}/v1/allocation/${alloc} > job.${job}.allocation.${alloc}.json
 done
 
 cd ${tmpDir}
