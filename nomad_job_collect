@@ -73,9 +73,9 @@ fi
 cd ${tmpDir}
 
 echo "    📦 Creating archive"
-tar -zcvf ${curDir}/${jobDir}_job_bundle.tgz ${jobDir} 2>/dev/null
+tar -zcvf ${curDir}/job-bundle-${jobDir}-`date +%F-%H%M%S`.tgz ${jobDir} 2>/dev/null
 
-# echo "    🧼 Cleaning up temp directory"
+echo "    📦 Cleaning up temp directory"
 cd ${curDir}
 rm -rf $tmpDir
-echo "🤖 Done.  Zzzzzzzz..."
+echo "🤖 Done."
