@@ -23,6 +23,26 @@ echo "    📝 all evaluations"
 curl -s ${NOMAD_ADDR}/v1/evaluations > evaluations.json
 echo "    📝 all deployments"
 curl -s ${NOMAD_ADDR}/v1/deployments > deployments.json
+
+
+echo "� Collecting server agent information"
+for server in `curl -s ${NOMAD_ADDR}/v1/agent/members | jq -r --sort-keys .Members[].Addr`
+do
+    echo "    � Server = ${server}"
+    serverFileName=`echo ${server}|sed 's/\./-/g'`
+    curl -s http://${server}:4646/v1/agent/self | jq --sort-keys . > agent-self-server-${serverFileName}.json
+done
+
+echo "� Collecting client agent information"
+for client in `curl -s ${NOMAD_ADDR}/v1/nodes | jq -r --sort-keys .[].Address`
+do
+    echo "    � Client = ${client}"
+    clientFileName=`echo ${client}|sed 's/\./-/g'`
+    curl -s http://${client}:4646/v1/agent/self | jq --sort-keys . > agent-self-client-${clientFileName}.json
+done
+
+
+echo "� Collecting information about job ${job}"
 echo "    📝 job by name - ${job}"
 curl -s ${NOMAD_ADDR}/v1/job/${job} > job.${job}.json
 echo "    📝 allocations for job"
