@@ -52,10 +52,21 @@ if [ -n "${job}" ]; then
     echo "    📝 summary"
     curl -s ${NOMAD_ADDR}/v1/job/${job}/summary > job.${job}.summary.json
 
+    echo "📂 Collecting job allocation details for ${job}"
     for alloc in `curl -s ${NOMAD_ADDR}/v1/job/${job}/allocations | jq -r '.[].ID'`
     do
-    echo "        📝 allocation ${alloc}"
-    curl -s ${NOMAD_ADDR}/v1/allocation/${alloc} > job.${job}.allocation.${alloc}.json
+        echo "    📝 allocation ${alloc}"
+        curl -s ${NOMAD_ADDR}/v1/allocation/${alloc} > job.${job}.allocation.${alloc}.json
+
+        for task in $(nomad alloc status -json ${alloc} | jq -r ' .TaskStates|keys[]');
+        do
+            echo -e "        📝 Gathering logs for allocation ${alloc}"
+            for log in stdout stderr;
+            do
+                echo "            📝 Task = ${task} - ${log}"
+                nomad alloc logs "--${log}" ${alloc} ${task} > "job.${job}.allocation.${alloc}.${task}.${log}.log";
+            done;
+        done
     done
 fi
 
