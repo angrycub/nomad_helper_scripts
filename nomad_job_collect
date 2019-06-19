@@ -67,14 +67,14 @@ if [ -n "${job}" ]; then
         echo "    - allocation ${alloc}"
         curl -s ${NOMAD_ADDR}/v1/allocation/${alloc} > job.${job}.allocation.${alloc}.json
 
-        for task in $(nomad alloc status -json ${alloc} | jq -r ' .TaskStates|keys[]');
+        for task in $(nomad alloc status -json ${alloc} | jq -r ' .TaskStates|keys[]')
         do
             echo -e "        - Gathering logs for allocation ${alloc}"
-            for log in stdout stderr;
-            do
-                echo "            - Task = ${task} - ${log}"
-                nomad alloc logs "--${log}" ${alloc} ${task} > "job.${job}.allocation.${alloc}.${task}.${log}.log";
-            done;
+            curl -s "${NOMAD_ADDR}/v1/client/fs/logs/${alloc}?plain=true&task=${task}&type=stdout" > "job.${job}.allocation.${alloc}.${task}.stdout.log"
+            curl -s "${NOMAD_ADDR}/v1/client/fs/logs/${alloc}?plain=true&task=${task}&type=stderr" > "job.${job}.allocation.${alloc}.${task}.stderr.log"
+
+            # nomad alloc logs ${alloc} ${task} > "job.${job}.allocation.${alloc}.${task}.stdout-CLI.log"
+            # nomad alloc logs -stderr ${alloc} ${task} > "job.${job}.allocation.${alloc}.${task}.stderr-CLI.log"
         done
     done
 fi
