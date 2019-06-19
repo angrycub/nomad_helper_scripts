@@ -4,11 +4,20 @@
 # TODO: add usage
 
 job=${1}
+hostname=`hostname -f`
+export NOMAD_ADDR=${NOMAD_ADDR:-"http://127.0.0.1:4646"}
+
+if [ -z "${job}" ]; then
+    echo -e "\nNo job name specified -- only collecting general/agent information"
+    echo -e "\n\t Use the syntax 'nomad_job_collect JOBNAME' to gather details of a specific job"
+    echo -e "\n"
+    
+    job='general'
+fi
+
 jobDir=`echo ${job}|sed 's/\//_/g'`
 curDir=`pwd`
 
-hostname=`hostname -f`
-export NOMAD_ADDR=${NOMAD_ADDR:-"http://127.0.0.1:4646"}
 # echo "📂 Making temp directory"
 tmpDir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
 outDir=${tmpDir}/${jobDir}
@@ -72,7 +81,11 @@ fi
 
 cd ${tmpDir}
 
-tarballFileName=${curDir}/job-bundle-${jobDir}-`date +%F-%H%M%S`.tgz
+if [ "${job}" == "general" ]; then
+	tarballFileName=${curDir}/nomad-general-bundle_`date +%F-%H%M%S`.tgz
+else
+	tarballFileName=${curDir}/nomad-job-bundle_${jobDir}_`date +%F-%H%M%S`.tgz
+fi
 echo "    📦 Creating archive ${tarballFileName}"
 
 tar -zcvf --preserve-order --sort=name ${tarballFileName} ${jobDir} 2>/dev/null
