@@ -72,8 +72,10 @@ fi
 
 cd ${tmpDir}
 
-echo "    📦 Creating archive"
-tar -zcvf --preserve-order --sort=name ${curDir}/job-bundle-${jobDir}-`date +%F-%H%M%S`.tgz ${jobDir} 2>/dev/null
+tarballFileName=${curDir}/job-bundle-${jobDir}-`date +%F-%H%M%S`.tgz
+echo "    📦 Creating archive ${tarballFileName}"
+
+tar -zcvf --preserve-order --sort=name ${tarballFileName} ${jobDir} 2>/dev/null
 
 echo "    🧼 Cleaning up temp directory"
 cd ${curDir}
