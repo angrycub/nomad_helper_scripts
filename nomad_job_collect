@@ -16,7 +16,7 @@ outDir=${tmpDir}/${jobDir}
 mkdir ${outDir}
 cd ${outDir}
 
-echo "� Collecting general information (hostname = ${hostname})"
+echo "📂 Collecting general information (hostname = ${hostname})"
 echo "    📝 all nodes"
 curl -s ${NOMAD_ADDR}/v1/nodes > nodes.json
 echo "    📝 all evaluations"
@@ -25,31 +25,31 @@ echo "    📝 all deployments"
 curl -s ${NOMAD_ADDR}/v1/deployments > deployments.json
 
 
-echo "� Collecting server agent information"
+echo "📂 Collecting server agent information"
 for server in `curl -s ${NOMAD_ADDR}/v1/agent/members | jq -r --sort-keys .Members[].Addr`
 do
-    echo "    � Server = ${server}"
+    echo "    📝 Server = ${server}"
     serverFileName=`echo ${server}|sed 's/\./-/g'`
     curl -s http://${server}:4646/v1/agent/self | jq --sort-keys . > agent-self-server-${serverFileName}.json
 done
 
-echo "� Collecting client agent information"
+echo "📂 Collecting client agent information"
 for client in `curl -s ${NOMAD_ADDR}/v1/nodes | jq -r --sort-keys .[].Address`
 do
-    echo "    � Client = ${client}"
+    echo "    📝 Client = ${client}"
     clientFileName=`echo ${client}|sed 's/\./-/g'`
     curl -s http://${client}:4646/v1/agent/self | jq --sort-keys . > agent-self-client-${clientFileName}.json
 done
 
 
-echo "� Collecting information about job ${job}"
-echo "    📝 job by name - ${job}"
+echo "📂 Collecting information about job ${job}"
+echo "    📝 job by name"
 curl -s ${NOMAD_ADDR}/v1/job/${job} > job.${job}.json
-echo "    📝 allocations for job"
+echo "    📝 allocations"
 curl -s ${NOMAD_ADDR}/v1/job/${job}/allocations > job.${job}.allocations.json
-echo "    � versions for job"
+echo "    📝 versions"
 curl -s ${NOMAD_ADDR}/v1/job/${job}/versions > job.${job}.versions.json
-echo "    � summary for job"
+echo "    📝 summary"
 curl -s ${NOMAD_ADDR}/v1/job/${job}/summary > job.${job}.summary.json
 
 for alloc in `curl -s ${NOMAD_ADDR}/v1/job/${job}/allocations | jq -r '.[].ID'`
