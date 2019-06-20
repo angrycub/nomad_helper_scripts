@@ -66,7 +66,7 @@ if [ -n "${job}" ]; then
 
             for task in $(nomad alloc status -json ${alloc} | jq -r ' .TaskStates|keys[]')
             do
-                echo -e "        - Gathering logs for allocation ${alloc}"
+                echo -e "        - Gathering logs for task ${task}"
                 curl -s "${NOMAD_ADDR}/v1/client/fs/logs/${alloc}?plain=true&task=${task}&type=stdout" > "job.${job}.allocation.${alloc}.${task}.stdout.log"
                 curl -s "${NOMAD_ADDR}/v1/client/fs/logs/${alloc}?plain=true&task=${task}&type=stderr" > "job.${job}.allocation.${alloc}.${task}.stderr.log"
 
