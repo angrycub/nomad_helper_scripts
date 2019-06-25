@@ -23,6 +23,8 @@ mkdir ${outDir}
 cd ${outDir}
 
 echo "# Collecting general information (hostname = ${hostname})"
+echo "    - all members"
+curl -s ${NOMAD_ADDR}/v1/agent/members > members.json
 echo "    - all nodes"
 curl -s ${NOMAD_ADDR}/v1/nodes > nodes.json
 echo "    - all evaluations"
@@ -30,9 +32,12 @@ curl -s ${NOMAD_ADDR}/v1/evaluations > evaluations.json
 echo "    - all deployments"
 curl -s ${NOMAD_ADDR}/v1/deployments > deployments.json
 
+# Allow existing environment variables to override
+export NOMAD_SERVERS=${NOMAD_SERVERS:-`cat members.json | jq -r --sort-keys .Members[].Addr`}
+export NOMAD_CLIENTS=${NOMAD_CLIENTS:-`cat nodes.json | jq -r --sort-keys .[].Address`}
 
 echo "# Collecting server agent information"
-for server in `curl -s ${NOMAD_ADDR}/v1/agent/members | jq -r --sort-keys .Members[].Addr`
+for server in ${NOMAD_SERVERS}
 do
     echo "    - Server = ${server}"
     serverFileName=`echo ${server}|sed 's/\./-/g'`
@@ -40,7 +45,7 @@ do
 done
 
 echo "# Collecting client agent information"
-for client in `curl -s ${NOMAD_ADDR}/v1/nodes | jq -r --sort-keys .[].Address`
+for client in ${NOMAD_CLIENTS}
 do
     echo "    - Client = ${client}"
     clientFileName=`echo ${client}|sed 's/\./-/g'`
