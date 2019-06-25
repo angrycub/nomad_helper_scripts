@@ -9,10 +9,11 @@ if [ -z "${job}" ]; then
     echo -e "\n\t Use the syntax 'nomad_job_collect JOBNAME' to gather details of a specific job"
     echo -e "\n"
     
-    job='general'
+    jobDir='general'
+else
+    jobDir=`echo ${job}|sed 's/\//_/g'`
 fi
 
-jobDir=`echo ${job}|sed 's/\//_/g'`
 curDir=`pwd`
 
 tmpDir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
