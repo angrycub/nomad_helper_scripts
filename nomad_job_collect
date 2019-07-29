@@ -18,7 +18,7 @@ curDir=`pwd`
 
 tmpDir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
 outDir=${tmpDir}/${jobDir}
-echo "# Creaating temp directory ${outDir}"
+echo "# Creating temp directory ${outDir}"
 mkdir ${outDir}
 cd ${outDir}
 
