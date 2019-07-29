@@ -3,6 +3,8 @@
 job=${1}
 hostname=`hostname -f`
 export NOMAD_ADDR=${NOMAD_ADDR:-"http://127.0.0.1:4646"}
+protocol=$(echo $NOMAD_ADDR | awk -F: '{print $1}')
+port=$(echo $NOMAD_ADDR | awk -F: '{print $3}')
 
 if [ -z "${job}" ]; then
     echo -e "\nNo job name specified -- only collecting general/agent information"
@@ -41,7 +43,7 @@ for server in ${NOMAD_SERVERS}
 do
     echo "    - Server = ${server}"
     serverFileName=`echo ${server}|sed 's/\./-/g'`
-    curl -s http://${server}:4646/v1/agent/self | jq --sort-keys . > agent-self-server-${serverFileName}.json
+    curl -s -k ${protocol}://${server}:${port}/v1/agent/self | jq --sort-keys . > agent-self-server-${serverFileName}.json
 done
 
 echo "# Collecting client agent information"
@@ -49,7 +51,7 @@ for client in ${NOMAD_CLIENTS}
 do
     echo "    - Client = ${client}"
     clientFileName=`echo ${client}|sed 's/\./-/g'`
-    curl -s http://${client}:4646/v1/agent/self | jq --sort-keys . > agent-self-client-${clientFileName}.json
+    curl -s -k ${protocol}://${client}:${port}/v1/agent/self | jq --sort-keys . > agent-self-client-${clientFileName}.json
 done
 
 
