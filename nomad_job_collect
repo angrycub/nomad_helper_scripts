@@ -16,6 +16,17 @@ else
     jobDir=`echo ${job}|sed 's/\//_/g'`
 fi
 
+# todo here build a variable with `--cert ${NOMAD_CLIENT_CERT} --key ${NOMAD_CLIENT_KEY}`
+
+# Testing for TLS Client Cert checking.  This will exit with a 35 if we have to supply certs
+curl -k -s ${NOMAD_ADDR}/v1/agent/members
+if [[ $? == 35 ]]
+then
+    echo "This cluster requires clients to present valid certificates.  Please"
+    echo "export NOMAD_CLIENT_CERT and NOMAD_CLIENT_KEY with paths to valid"
+    echo "certificate information"
+    exit 1
+fi
 curDir=`pwd`
 
 tmpDir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
@@ -26,13 +37,13 @@ cd ${outDir}
 
 echo "# Collecting general information (hostname = ${hostname})"
 echo "    - all members"
-curl -s ${NOMAD_ADDR}/v1/agent/members > members.json
+curl -k -s ${NOMAD_ADDR}/v1/agent/members > members.json
 echo "    - all nodes"
-curl -s ${NOMAD_ADDR}/v1/nodes > nodes.json
+curl -k -s ${NOMAD_ADDR}/v1/nodes > nodes.json
 echo "    - all evaluations"
-curl -s ${NOMAD_ADDR}/v1/evaluations > evaluations.json
+curl -k -s ${NOMAD_ADDR}/v1/evaluations > evaluations.json
 echo "    - all deployments"
-curl -s ${NOMAD_ADDR}/v1/deployments > deployments.json
+curl -k -s ${NOMAD_ADDR}/v1/deployments > deployments.json
 
 # Allow existing environment variables to override
 export NOMAD_SERVERS=${NOMAD_SERVERS:-`cat members.json | jq -r --sort-keys .Members[].Addr`}
@@ -43,7 +54,7 @@ for server in ${NOMAD_SERVERS}
 do
     echo "    - Server = ${server}"
     serverFileName=`echo ${server}|sed 's/\./-/g'`
-    curl -s -k ${protocol}://${server}:${port}/v1/agent/self | jq --sort-keys . > agent-self-server-${serverFileName}.json
+    curl -k -s ${protocol}://${server}:${port}/v1/agent/self | jq --sort-keys . > agent-self-server-${serverFileName}.json
 done
 
 echo "# Collecting client agent information"
@@ -51,32 +62,32 @@ for client in ${NOMAD_CLIENTS}
 do
     echo "    - Client = ${client}"
     clientFileName=`echo ${client}|sed 's/\./-/g'`
-    curl -s -k ${protocol}://${client}:${port}/v1/agent/self | jq --sort-keys . > agent-self-client-${clientFileName}.json
+    curl -k -s ${protocol}://${client}:${port}/v1/agent/self | jq --sort-keys . > agent-self-client-${clientFileName}.json
 done
 
 
 if [ -n "${job}" ]; then
-    response=`curl -s -w %{http_code} ${NOMAD_ADDR}/v1/job/${job} -o job.${job}.json`
+    response=`curl -k -s -w %{http_code} ${NOMAD_ADDR}/v1/job/${job} -o job.${job}.json`
     if [ $response -eq 200 ]; then
         echo "# Collecting information about job ${job}"
         echo "    - allocations"
-        curl -s ${NOMAD_ADDR}/v1/job/${job}/allocations > job.${job}.allocations.json
+        curl -k -s ${NOMAD_ADDR}/v1/job/${job}/allocations > job.${job}.allocations.json
         echo "    - versions"
-        curl -s ${NOMAD_ADDR}/v1/job/${job}/versions > job.${job}.versions.json
+        curl -k -s ${NOMAD_ADDR}/v1/job/${job}/versions > job.${job}.versions.json
         echo "    - summary"
-        curl -s ${NOMAD_ADDR}/v1/job/${job}/summary > job.${job}.summary.json
+        curl -k -s ${NOMAD_ADDR}/v1/job/${job}/summary > job.${job}.summary.json
 
         echo "# Collecting job allocation details for ${job}"
-        for alloc in `curl -s ${NOMAD_ADDR}/v1/job/${job}/allocations | jq -r '.[].ID'`
+        for alloc in `curl -k -s ${NOMAD_ADDR}/v1/job/${job}/allocations | jq -r '.[].ID'`
         do
             echo "    - allocation ${alloc}"
-            curl -s ${NOMAD_ADDR}/v1/allocation/${alloc} > job.${job}.allocation.${alloc}.json
+            curl -k -s ${NOMAD_ADDR}/v1/allocation/${alloc} > job.${job}.allocation.${alloc}.json
 
             for task in $(nomad alloc status -json ${alloc} | jq -r ' .TaskStates|keys[]')
             do
                 echo -e "        - Gathering logs for task ${task}"
-                curl -s "${NOMAD_ADDR}/v1/client/fs/logs/${alloc}?plain=true&task=${task}&type=stdout" > "job.${job}.allocation.${alloc}.${task}.stdout.log"
-                curl -s "${NOMAD_ADDR}/v1/client/fs/logs/${alloc}?plain=true&task=${task}&type=stderr" > "job.${job}.allocation.${alloc}.${task}.stderr.log"
+                curl -k -s "${NOMAD_ADDR}/v1/client/fs/logs/${alloc}?plain=true&task=${task}&type=stdout" > "job.${job}.allocation.${alloc}.${task}.stdout.log"
+                curl -k -s "${NOMAD_ADDR}/v1/client/fs/logs/${alloc}?plain=true&task=${task}&type=stderr" > "job.${job}.allocation.${alloc}.${task}.stderr.log"
 
                 # nomad alloc logs ${alloc} ${task} > "job.${job}.allocation.${alloc}.${task}.stdout-CLI.log"
                 # nomad alloc logs -stderr ${alloc} ${task} > "job.${job}.allocation.${alloc}.${task}.stderr-CLI.log"
