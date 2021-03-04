@@ -1,46 +1,105 @@
 #! /bin/bash
 
-# TODO: make pretty a flag
-# TODO: test for job name (handle 404 case?)
-# TODO: add usage
-
 job=${1}
-jobDir=`echo ${job}|sed 's/\//_/g'`
+hostname=`hostname -f`
+export NOMAD_ADDR=${NOMAD_ADDR:-"http://127.0.0.1:4646"}
+
+if [ -z "${job}" ]; then
+    echo -e "\nNo job name specified -- only collecting general/agent information"
+    echo -e "\n\t Use the syntax 'nomad_job_collect JOBNAME' to gather details of a specific job"
+    echo -e "\n"
+    
+    jobDir='general'
+else
+    jobDir=`echo ${job}|sed 's/\//_/g'`
+fi
+
 curDir=`pwd`
 
-# echo "📂 Making temp directory"
 tmpDir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
 outDir=${tmpDir}/${jobDir}
+echo "# Creating temp directory ${outDir}"
 mkdir ${outDir}
 cd ${outDir}
 
-pretty=""
-pretty='?pretty=true'
+echo "# Collecting general information (hostname = ${hostname})"
+echo "    - all members"
+curl -s ${NOMAD_ADDR}/v1/agent/members > members.json
+echo "    - all nodes"
+curl -s ${NOMAD_ADDR}/v1/nodes > nodes.json
+echo "    - all evaluations"
+curl -s ${NOMAD_ADDR}/v1/evaluations > evaluations.json
+echo "    - all deployments"
+curl -s ${NOMAD_ADDR}/v1/deployments > deployments.json
 
-echo "🤖 Collecting information about ${job}"
-echo "    📝 all nodes"
-curl -s http://127.0.0.1:4646/v1/nodes${pretty} > nodes.json
-echo "    📝 all evaluations"
-curl -s http://127.0.0.1:4646/v1/evaluations${pretty} > evaluations.json
-echo "    📝 all deployments"
-curl -s http://127.0.0.1:4646/v1/deployments${pretty} > deployments.json
-echo "    📝 job by name - ${job}"
-curl -s http://127.0.0.1:4646/v1/job/${job}${pretty} > job.${job}.json
-echo "    📝 allocations for job"
-curl -s http://127.0.0.1:4646/v1/job/${job}/allocations${pretty} > job.${job}.allocations.json
+# Allow existing environment variables to override
+export NOMAD_SERVERS=${NOMAD_SERVERS:-`cat members.json | jq -r --sort-keys .Members[].Addr`}
+export NOMAD_CLIENTS=${NOMAD_CLIENTS:-`cat nodes.json | jq -r --sort-keys .[].Address`}
 
-for alloc in `curl -s http://127.0.0.1:4646/v1/job/${job}/allocations | jq -r '.[].ID'`
+echo "# Collecting server agent information"
+for server in ${NOMAD_SERVERS}
 do
-echo "        📝 allocation ${alloc}"
-curl -s http://127.0.0.1:4646/v1/allocation/${alloc}${pretty} > allocation.${alloc}.json
+    echo "    - Server = ${server}"
+    serverFileName=`echo ${server}|sed 's/\./-/g'`
+    curl -s http://${server}:4646/v1/agent/self | jq --sort-keys . > agent-self-server-${serverFileName}.json
 done
+
+echo "# Collecting client agent information"
+for client in ${NOMAD_CLIENTS}
+do
+    echo "    - Client = ${client}"
+    clientFileName=`echo ${client}|sed 's/\./-/g'`
+    curl -s http://${client}:4646/v1/agent/self | jq --sort-keys . > agent-self-client-${clientFileName}.json
+done
+
+
+if [ -n "${job}" ]; then
+    response=`curl -s -w %{http_code} ${NOMAD_ADDR}/v1/job/${job} -o job.${job}.json`
+    if [ $response -eq 200 ]; then
+        echo "# Collecting information about job ${job}"
+        echo "    - allocations"
+        curl -s ${NOMAD_ADDR}/v1/job/${job}/allocations > job.${job}.allocations.json
+        echo "    - versions"
+        curl -s ${NOMAD_ADDR}/v1/job/${job}/versions > job.${job}.versions.json
+        echo "    - summary"
+        curl -s ${NOMAD_ADDR}/v1/job/${job}/summary > job.${job}.summary.json
+
+        echo "# Collecting job allocation details for ${job}"
+        for alloc in `curl -s ${NOMAD_ADDR}/v1/job/${job}/allocations | jq -r '.[].ID'`
+        do
+            echo "    - allocation ${alloc}"
+            curl -s ${NOMAD_ADDR}/v1/allocation/${alloc} > job.${job}.allocation.${alloc}.json
+
+            for task in $(nomad alloc status -json ${alloc} | jq -r ' .TaskStates|keys[]')
+            do
+                echo -e "        - Gathering logs for task ${task}"
+                curl -s "${NOMAD_ADDR}/v1/client/fs/logs/${alloc}?plain=true&task=${task}&type=stdout" > "job.${job}.allocation.${alloc}.${task}.stdout.log"
+                curl -s "${NOMAD_ADDR}/v1/client/fs/logs/${alloc}?plain=true&task=${task}&type=stderr" > "job.${job}.allocation.${alloc}.${task}.stderr.log"
+
+                # nomad alloc logs ${alloc} ${task} > "job.${job}.allocation.${alloc}.${task}.stdout-CLI.log"
+                # nomad alloc logs -stderr ${alloc} ${task} > "job.${job}.allocation.${alloc}.${task}.stderr-CLI.log"
+            done
+        done
+    else
+        echo -e "\n\n\t *** Job ${job} not found *** (HTTP response code $response)\n\n"
+    fi
+fi
 
 cd ${tmpDir}
 
-echo "    📦 Creating archive"
-tar -zcvf ${curDir}/${jobDir}_job_bundle.tgz ${jobDir} 2>/dev/null
+if [ "${job}" == "general" ]; then
+	tarballFileName=${curDir}/nomad-general-bundle_`date +%F-%H%M%S`.tgz
+else
+	tarballFileName=${curDir}/nomad-job-bundle_${jobDir}_`date +%F-%H%M%S`.tgz
+fi
 
-# echo "    🧼 Cleaning up temp directory"
+echo "# Creating archive ${tarballFileName}"
+echo '```'
+tar --sort=name -zcvf ${tarballFileName} ${jobDir}
+echo '```'
+echo "${tarballFileName}"
+
+echo "# Cleaning up temp directory"
 cd ${curDir}
 rm -rf $tmpDir
-echo "🤖 Done.  Zzzzzzzz..."
+echo "# Done."
