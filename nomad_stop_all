@@ -5,5 +5,5 @@ do
   echo "Stopping ${I}..."
   nomad stop ${1} ${I}
 done
-nomad_gc
+nomad system gc
 

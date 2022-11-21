@@ -15,7 +15,6 @@ function install {
 
 install cluster_push
 install consul_push
-install nomad_gc
 install nomad_push
 install nomad_reset
 install nomad_start

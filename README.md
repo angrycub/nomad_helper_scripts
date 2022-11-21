@@ -5,7 +5,7 @@
 These are just some bash scripts that I use to make my reproduction life at work slightly less bad.  They are based on my lab cluster, so your mileage may vary.
 
 
- * [nomad_gc](nomad_gc) - Calls the API endpoint to run Nomad's garbage collection.  Used in nomad_reset and nomad_stop_all.  Useful on its own.
+ * [nomad_gc](nomad_gc) - **DEPRECATED:** Use `nomad system gc` instead. Calls the API endpoint to run Nomad's garbage collection.  Formerly used in nomad_stop_all.
  * [nomad_push](nomad_push) - This script enables me to push in Nomad versions into the /opt/nomad/bin folders on all of the lab machines.
  * [nomad_reset](nomad_reset) - Stops all of the jobs in the cluster, tries to unmount any allocation mounts that might be orphaned, wipes the state.
  * [nomad_start](nomad_start) - **Experimental** Starts a small collection of work in a cluster based on paths in a configuration file.
