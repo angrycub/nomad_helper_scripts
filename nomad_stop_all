@@ -1,9 +1,8 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
-for I in `nomad status | awk '{print $1}' | grep -v -e "^ID\s*$"`
+for I in `nomad inspect -t '{{ range .}}{{printf "%s\n" .ID}}{{end}}'`
 do
   echo "Stopping ${I}..."
-  nomad stop ${1} ${I}
+  nomad job stop ${1} ${I}
 done
 nomad system gc
-

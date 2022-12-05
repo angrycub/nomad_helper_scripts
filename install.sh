@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 InstallDestination="/usr/local/bin"
 
@@ -8,7 +8,7 @@ function install {
     echo -n "Removing existing symlink and "
     rm -f ${InstallDestination}/${1}
   fi
-  echo -n "Creating symlink to ${1} in ${InstallDestination}... " 
+  echo -n "Creating symlink to ${1} in ${InstallDestination}... "
   ln -s `pwd`/${1} ${InstallDestination}/${1}
   echo "Done."
 }
@@ -18,7 +18,7 @@ install consul_push
 install nomad_push
 install nomad_reset
 install nomad_start
-install nomad_stop_all  
+install nomad_stop_all
 install nomad_version
 install nomad_job_collect
 install fetch

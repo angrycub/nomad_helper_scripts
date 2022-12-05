@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 JobsToStartFile="/etc/nomad.d/startup"
 
@@ -7,4 +7,3 @@ do
   echo "Starting ${I}..."
   nomad run ${I}
 done
-

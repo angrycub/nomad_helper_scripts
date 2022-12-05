@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 job=${1}
 hostname=`hostname -f`
@@ -8,7 +8,7 @@ if [ -z "${job}" ]; then
     echo -e "\nNo job name specified -- only collecting general/agent information"
     echo -e "\n\t Use the syntax 'nomad_job_collect JOBNAME' to gather details of a specific job"
     echo -e "\n"
-    
+
     jobDir='general'
 else
     jobDir=`echo ${job}|sed 's/\//_/g'`

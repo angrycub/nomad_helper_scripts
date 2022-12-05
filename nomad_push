@@ -1,10 +1,10 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 first_node=nomad-server-1
 nodes=( nomad-server-2 nomad-server-3 nomad-client-1 nomad-client-2 nomad-client-3 )
 
 echo "🚚 Deploying nomad to /opt/nomad/bin on first node..."
-  scp nomad root@$first_node:/opt/nomad/bin/nomad-$1 
+  scp nomad root@$first_node:/opt/nomad/bin/nomad-$1
 
 echo "🚚 Deploying nomad to /opt/nomad/bin on other nodes..."
 I=0
@@ -18,7 +18,7 @@ done
 
 echo "⌛️ Waiting for PIDs to complete"
 for pid in ${pids[*]}
-do 
+do
   echo " - ⏰ Waiting for PID $pid"
-  wait $pid; 
+  wait $pid;
 done;

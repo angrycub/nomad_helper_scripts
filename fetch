@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #################################################
 ### Fetch Hashi Product By Version from internet
@@ -6,39 +6,42 @@
 
 #Set Script Name variable
 SCRIPT=`basename ${BASH_SOURCE[0]}`
-PUP_VERSION="v0.4.0"
+
 ### # functions
 function usage () {
+  local ec=0
   local l_MSG=$1
-  echo "Usage Error: $l_MSG"
+  if [ "${l_MSG}" != "" ]; then
+    echo "Usage Error: $l_MSG"
+    echo ''
+    ec=1
+  fi
   echo "Usage: ${SCRIPT} -p <string>"
-  echo "  where <string> specifies the product name"
-  echo "Recognized optional command line arguments"
-  echo "-v <string>  -- specifies the target version.  Defaults to latest stable version."
-  echo "-a <string>  -- specifies the target architecture.  Defaults to \`linux_amd64\`"
-  echo "-n -- do not create a symlink in /usr/local/bin"
+  echo '  where <string> specifies the product name'
+  echo ''
+  echo 'Recognized optional command line arguments'
+  echo '-v <string>  -- specifies the target version.  Defaults to latest stable version.'
+  echo '-a <string>  -- specifies the target architecture.  Defaults to \`linux_amd64\`'
+  echo '-e           -- download enterprise versions'
+  echo '-n           -- do not create a symlink in /usr/local/bin'
   exit 1
 }
+
 ## TODO: implement latest using `https://releases.hashicorp.com/«product»/index.json`
 function getLatest () {
-  # $1 should be product name
-  maybeFetchPup
-  local LATEST_VERSION=$(curl -s https://releases.hashicorp.com/$1/ | pup a[href^="/$1"] attr{href} | awk -F/ '$3!~/(-rc|-beta)/{print $3}' | head -n 1)
-  echo "${LATEST_VERSION}"
-}
-
-function maybeFetchPup() {
-  if [ ! -f /usr/local/bin/pup ] 
-  then
-    mkdir -p /opt/pup/bin
-    pushd /opt/pup/bin
-    wget -q https://github.com/ericchiang/pup/releases/download/${PUP_VERSION}/pup_${PUP_VERSION}_${ARCHITECTURE}.zip
-    unzip pup_${PUP_VERSION}_${ARCHITECTURE}.zip
-    rm pup_${PUP_VERSION}_${ARCHITECTURE}.zip
-    mv pup pup_${PUP_VERSION}
-    ln -s /opt/pup/bin/pup_${PUP_VERSION} /usr/local/bin/pup
-    popd
+  local FILTER="-v"
+  if [ "${ENT}" == "true" ]; then
+    FILTER=""
   fi
+
+  local LATEST_VERSION=$(curl -q -s https://releases.hashicorp.com/$1/ |\
+    tr '<>' ' ' |\
+    awk "/href=\\\"\\/$1/{ print \$3}" |\
+    awk -F"_" '{print $2}' |\
+    grep ${FILTER} "+ent" |\
+    head -n 1
+  )
+  echo "${LATEST_VERSION}"
 }
 
 function maybeCreateSymlink () {
@@ -65,7 +68,7 @@ fi
 #If an option should be followed by an argument, it should be followed by a ":".
 #The leading ":" suppresses error messages from
 #getopts. This is required to get my unrecognized option code to work.
-while getopts :np:v:a: FLAG; do
+while getopts :ndep:v:a: FLAG; do
   case $FLAG in
     p) # set option "p" specifying the product
       PRODUCT=$OPTARG
@@ -79,13 +82,19 @@ while getopts :np:v:a: FLAG; do
     n) # set option "n"
       NOCREATESYMLINK=0
       ;;
+    e) # set option "e"
+      ENT=true
+      ;;
+    d) # set option "d"
+      DRYRUN=true
+      ;;
     *) # invalid command line arguments
       usage "Invalid command line argument $OPTARG"
       ;;
   esac
-done  
+done
 
-#shift $((OPTIND-1))  #This tells getopts to move on to the next argument.
+#shift $((OPTIND-1))  # This tells getopts to move on to the next argument.
 
 ### # check that Product is not empty
 if [ -z "${PRODUCT}" ]
@@ -96,7 +105,7 @@ fi
 if [ -z "${ARCHITECTURE}" ]
 then
   if [ "Darwin" == $(uname -s) ]
-  then 
+  then
     ARCHITECTURE="darwin_amd64"
   else
     ARCHITECTURE="linux_amd64"
@@ -111,6 +120,13 @@ fi
 
 echo "Fetching ${PRODUCT} v${VERSION} for ${ARCHITECTURE}..."
 URL="https://releases.hashicorp.com/${PRODUCT}/${VERSION}/${PRODUCT}_${VERSION}_${ARCHITECTURE}.zip"
+if [ "${DRYRUN}" == "true" ]; then
+  echo "  URL: ${URL}"
+  echo ""
+  echo "Skipping download in dry run mode."
+  exit 0
+fi
+
 TMPDIR=`mktemp -d /tmp/fetch.XXXXXXXXXX` || exit 1
 pushd ${TMPDIR} > /dev/null
 mkdir -p /opt/${PRODUCT}/bin

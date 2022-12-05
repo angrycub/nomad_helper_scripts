@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 DEST="/usr/local/bin"
 SRC="/opt/nomad/bin"
@@ -64,7 +64,7 @@ fi
 #getopts. This is required to get my unrecognized option code to work.
 while getopts :idv: FLAG; do
   case $FLAG in
-    i) # set option "i" 
+    i) # set option "i"
       INTERACTIVE=true
       ;;
     d) # set option "d"
@@ -77,7 +77,7 @@ while getopts :idv: FLAG; do
       usage "Invalid command line argument $OPTARG"
       ;;
   esac
-done  
+done
 
 
 # user requested and interactive delete
@@ -102,7 +102,7 @@ fi
 if [[ "${DELETE}" == "true" ]]
 then
   if [[ -f ${SRC}/${APP}-${VERSION} ]]
-  then 
+  then
     deleteversion ${VERSION}
   else
     echo "Version not found."
@@ -111,10 +111,9 @@ then
 fi
 
 if [[ -f ${SRC}/${APP}-${VERSION} ]]
-then 
+then
   switchversion ${VERSION}
 else
   echo "Version not found."
   exit 1
 fi
-

@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 SRC="/opt/nomad/tls"
 CONFIG_DIR="/etc/nomad.d"
@@ -25,7 +25,7 @@ function checkDeps {
   if ! svn --version --quiet
   then
     echo " * Installing Subversion dependency"
-    sudo yum install -y svn 
+    sudo yum install -y svn
   fi
 }
 
@@ -35,7 +35,7 @@ function printUsage {
 
 function generateConfigFile {
   echo "" > tls.hcl
-  
+
 }
 # usage
 
@@ -65,4 +65,3 @@ fi
 
 
 # uninstall
-

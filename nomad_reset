@@ -1,4 +1,4 @@
-#! /bin/bash 
+#!/usr/bin/env bash
 
 DATA_DIR="/opt/nomad/data/"
 CONSUL_ADDR="http://127.0.0.1:8500"
@@ -18,7 +18,7 @@ if [[ `echo ${Mounts} | wc -l` -gt 0 ]]
 then
   echo " * Unmounting orphaned allocation mounts..."
   for Mount in ${Mounts}
-  do 
+  do
     echo "   - Unmounting ${Mount}..."
     umount ${Mount}
   done
@@ -34,7 +34,7 @@ if [[ `echo ${Checks} | wc -l` -gt 0 ]]
 then
   echo " * Removing stale Consul checks..."
   for Check in ${Checks}
-  do 
+  do
     echo "   - removing ${Check}..."
     curl -XPUT http://127.0.0.1:8500/v1/agent/check/deregister/${Check}
   done

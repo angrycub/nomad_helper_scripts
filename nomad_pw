@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+# Set Script Name variable
+SCRIPT=`basename ${BASH_SOURCE[0]}`
+
+usage () {
+  local ec=0
+  local l_MSG=$1
+  if [ "${l_MSG}" != "" ]; then
+    echo "Usage Error: $l_MSG"
+    ec=1
+  fi
+  echo "Usage: ${SCRIPT} <string>"
+  echo '  where <string> specifies the human-readable password'
+  echo ''
+  echo 'Recognized optional environment variables'
+  echo '  NOMAD_PW_SALT - Additional text to prepend to all input values. Useful'
+  echo '                  to create novel outputs for the same input string.'
+  echo '                  Defaults to "".'
+  exit $ec
+}
+
+findMD5App () {
+  cmd=$(which md5)
+  if [ $? -eq 0 ]; then
+    printf '%s' "${cmd}"
+    exit 0
+  fi
+  cmd=$(which md5sum)
+  if [ $? -eq 0 ]; then
+    printf '%s' "${cmd}"
+    exit 0
+  fi
+  echo 'ERROR: This command requires `md5` or `md5sum` on the path.'
+  exit 1
+}
+
+MD5="$(findMD5App)"
+uuid=$(printf "${NOMAD_PW_SALT}${1}" | ${MD5} | tr -d "\n\r")
+printf "%s-%s-%s-%s-%s" ${uuid:0:8} ${uuid:8:4} ${uuid:12:4} ${uuid:16:4} ${uuid:20:12}
