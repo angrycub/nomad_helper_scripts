@@ -11,7 +11,7 @@ I=0
 for Node in "${nodes[@]}"
 do
   echo " - 📦 ${Node}"
-  scp root@$first_node:/opt/nomad/bin/nomad-$1 root@${Node}:/opt/nomad/bin/nomad-$1 &
+  scp root@$first_node:/opt/nomad/bin/nomad-$1 root@${Node}.node.consul:/opt/nomad/bin/nomad-$1 &
   pids[${I}]=$!
   let "I++"
 done

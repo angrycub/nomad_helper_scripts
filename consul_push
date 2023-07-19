@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-first_node=10.0.0.52
-nodes=( 10.0.0.24 10.0.0.159 10.0.0.174 10.0.0.28 10.0.0.89 10.0.0.208 10.0.0.237 10.0.0.172 10.0.0.26 10.0.0.128 )
+first_node=consul-server-1
+nodes=( consul-server-2 consul-server-3 vault-server-1 vault-server-2 nomad-server-1 nomad-server-2 nomad-server-3 nomad-client-1 nomad-client-2 nomad-client-3 )
 
 echo "🚚 Deploying consul to /opt/consul/bin on first node..."
   scp consul root@$first_node:/opt/consul/bin/consul-$1

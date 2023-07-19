@@ -3,17 +3,18 @@
 InstallDestination="/usr/local/bin"
 
 function install {
+  echo -n "Installing $1 to ${InstallDestination}"
  if [[ -L ${InstallDestination}/${1} ]]
   then
-    echo -n "Removing existing symlink and "
+    echo -n "🗑 "
     rm -f ${InstallDestination}/${1}
   fi
-  echo -n "Creating symlink to ${1} in ${InstallDestination}... "
+  echo -n "🔗"
   ln -s `pwd`/${1} ${InstallDestination}/${1}
-  echo "Done."
+  echo ""
 }
 
-install cluster_push
+install gen_test_certs
 install consul_push
 install nomad_push
 install nomad_reset

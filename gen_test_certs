@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+  shift
+  regions=$0
+
+  if [ "$regions" == "" ]; then
+    regions="global"
+  fi
+
+  echo "🔐 Generating mTLS certificates..."
+
+  GOOS=`go env GOOS`
+  GOARCH=`go env GOARCH`
+  consul="consul"
+  if ! [ -x "$(command -v consul)" ]; then
+    echo 'Notice: consul is not installed. Fetching a copy.' >&2
+    fetchedConsul=true
+    wget --no-verbose https://releases.hashicorp.com/consul/1.11.3/consul_1.11.3_${GOOS}_${GOARCH}.zip
+    unzip consul_1.11.3_${GOOS}_${GOARCH}.zip > /dev/null 2>&1
+    rm -f consul_1.11.3_${GOOS}_${GOARCH}.zip > /dev/null 2>&1
+    consul="./consul"
+  fi
+
+  echo " - Cenerating CA..."
+  ${consul} tls ca create -domain="nomad" > /dev/null 2>&1
+
+  for Region in $regions
+  do
+    echo -n " - \"${Region}\""
+    if [ "$fetchedConsul" == "true" ]; then consul="../consul"; fi
+    ${consul} tls cert create -ca=../nomad-agent-ca.pem -key=../nomad-agent-ca-key.pem -dc="${Region}" -domain="nomad" -server > /dev/null
+    ${consul} tls cert create -ca=../nomad-agent-ca.pem -key=../nomad-agent-ca-key.pem -dc="${Region}" -domain="nomad" -client > /dev/null
+
+    cat > .state/config.${Region}/tls.hcl << EOH
+tls {
+  http = true
+  rpc  = true
+
+  ca_file   = "nomad-agent-ca.pem"
+  cert_file = "tls.${Region}/${Region}-server-nomad-0.pem"
+  key_file  = "tls.${Region}/${Region}-server-nomad-0-key.pem"
+}
+EOH
+    echo " ✅"
+  done
+
+  if [ "${fetchedConsul}" == "true" ]; then
+    echo " - Removing temporary Consul download..."
+    rm -f ${consul}
+  fi
+  echo ""
