@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+
+DEST="/usr/local/bin"
+SRC="/opt/nomad-pack/bin"
+APP="nomad-pack"
+
+SCRIPT=`basename ${BASH_SOURCE[0]}`
+
+### # functions
+function usage () {
+  local l_MSG=$1
+  echo "Usage Error: $l_MSG"
+  echo "Usage: ${SCRIPT}"
+  echo ""
+  echo "Recognized optional command line arguments"
+  echo "-v <string>  -- specifies the target version.  Defaults to latest stable version."
+  echo "-i -- Use interactive mode"
+  echo "-d -- Delete rather than switching to a version"
+  echo "-h -- show this help"
+  exit 1
+}
+
+function yaydone {
+  ls -al ${DEST}/${APP}
+  ${DEST}/${APP} version
+  exit 0
+}
+
+function switchversion {
+  local l_VERSION=$1
+  if [[ -L ${DEST}/${APP} ]]
+  then
+    echo -n "Removing existing and "
+    rm -f ${DEST}/${APP}
+  fi
+  echo "Creating symlink for version ${l_VERSION}"
+  ln -s ${SRC}/${APP}-${l_VERSION} ${DEST}/${APP}
+  yaydone
+}
+
+function deleteversion {
+  local l_VERSION=$1
+  echo "Removing version ${l_VERSION}"
+  rm ${SRC}/${APP}-${l_VERSION}
+  exit
+}
+
+function listversions {
+  ls ${SRC} | sed "s/${APP}-//g"
+  exit 0
+}
+
+### # starting main
+### check number of command line arguments
+NUMARGS=$#
+if [ $NUMARGS -eq 0 ]; then
+  listversions
+fi
+
+### Start getopts code ###
+#Parse command line flags
+#If an option should be followed by an argument, it should be followed by a ":".
+#The leading ":" suppresses error messages from
+#getopts. This is required to get my unrecognized option code to work.
+while getopts :idv: FLAG; do
+  case $FLAG in
+    i) # set option "i"
+      INTERACTIVE=true
+      ;;
+    d) # set option "d"
+      DELETE=true
+      ;;
+    v) # set option "v"
+      VERSION=$OPTARG
+      ;;
+    *) # invalid command line arguments
+      usage "Invalid command line argument $OPTARG"
+      ;;
+  esac
+done
+
+
+# user requested and interactive delete
+if [[ "${INTERACTIVE}" == "true" && "${DELETE}" == "true" ]]
+then
+  select TargetVersion in $(ls ${SRC} | sed "s/${APP}-//g")
+  do
+    deleteversion ${TargetVersion}
+  done
+fi
+
+# Given 1 parameter set to -i, destroy any existing symlinks and create one for the given version
+if [[  "${INTERACTIVE}" == "true" ]]
+then
+  select TargetVersion in $(ls ${SRC} | sed "s/${APP}-//g")
+  do
+    switchversion ${TargetVersion}
+  done
+fi
+
+# Given 1 parameter, destroy any existing symlinks and create one for the given version
+if [[ "${DELETE}" == "true" ]]
+then
+  if [[ -f ${SRC}/${APP}-${VERSION} ]]
+  then
+    deleteversion ${VERSION}
+  else
+    echo "Version not found."
+    exit 1
+  fi
+fi
+
+if [[ -f ${SRC}/${APP}-${VERSION} ]]
+then
+  switchversion ${VERSION}
+else
+  echo "Version not found."
+  exit 1
+fi

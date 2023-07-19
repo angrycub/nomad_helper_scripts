@@ -23,3 +23,5 @@ install nomad_stop_all
 install nomad_version
 install nomad_job_collect
 install fetch
+install nomad-pack_version
+
