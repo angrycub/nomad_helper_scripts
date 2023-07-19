@@ -7,6 +7,8 @@
 #Set Script Name variable
 SCRIPT=`basename ${BASH_SOURCE[0]}`
 
+DEFAULT_PLATFORM=$(uname -s -m | tr '[:upper:] ' '[:lower:]_' | sed -e 's/_aarch64$/_arm64/g' -e 's/_x86_64$/_amd64/g')
+
 ### # functions
 function usage () {
   local ec=0
@@ -21,7 +23,7 @@ function usage () {
   echo ''
   echo 'Recognized optional command line arguments'
   echo '-v <string>  -- specifies the target version.  Defaults to latest stable version.'
-  echo '-a <string>  -- specifies the target architecture.  Defaults to \`linux_amd64\`'
+  echo "-a <string>  -- specifies the target architecture.  Defaults to \`${DEFAULT_PLATFORM}\`"
   echo '-e           -- download enterprise versions'
   echo '-n           -- do not create a symlink in /usr/local/bin'
   exit 1
@@ -49,14 +51,21 @@ if [ -z "${NOCREATESYMLINK}" ]
 then
   if [ -L "/usr/local/bin/${PRODUCT}" ]
   then
-    rm -rf "/usr/local/bin/${PRODUCT}"
+    if ! rm -rf "/usr/local/bin/${PRODUCT}"; then
+	    echo "Unable to remove existing symlink. Trying with sudo..."
+	    sudo rm -rf "/usr/local/bin/${PRODUCT}"
+    fi
   fi
-  ln -s "/opt/${PRODUCT}/bin/${PRODUCT}-v${VERSION}" "/usr/local/bin/${PRODUCT}"
+  if ! ln -s "/opt/${PRODUCT}/bin/${PRODUCT}-v${VERSION}" "/usr/local/bin/${PRODUCT}"; then
+	  echo "Unable to create symlink in /usr/local/bin. Trying with sudo..."
+	  sudo ln -s "/opt/${PRODUCT}/bin/${PRODUCT}-v${VERSION}" "/usr/local/bin/${PRODUCT}"
+  fi
 fi
 
 }
 
 ### # starting main
+
 ### check number of command line arguments
 NUMARGS=$#
 if [ $NUMARGS -eq 0 ]; then
@@ -64,10 +73,10 @@ if [ $NUMARGS -eq 0 ]; then
 fi
 
 ### Start getopts code ###
-#Parse command line flags
-#If an option should be followed by an argument, it should be followed by a ":".
-#The leading ":" suppresses error messages from
-#getopts. This is required to get my unrecognized option code to work.
+# Parse command line flags
+# If an option should be followed by an argument, it should be followed by a ":".
+# The leading ":" suppresses error messages from
+# getopts. This is required to get my unrecognized option code to work.
 while getopts :ndep:v:a: FLAG; do
   case $FLAG in
     p) # set option "p" specifying the product
@@ -104,12 +113,7 @@ fi
 
 if [ -z "${ARCHITECTURE}" ]
 then
-  if [ "Darwin" == $(uname -s) ]
-  then
-    ARCHITECTURE="darwin_amd64"
-  else
-    ARCHITECTURE="linux_amd64"
-  fi
+  ARCHITECTURE="${DEFAULT_PLATFORM}"
 fi
 
 if [ -z "${VERSION}" ]
@@ -129,10 +133,16 @@ fi
 
 TMPDIR=`mktemp -d /tmp/fetch.XXXXXXXXXX` || exit 1
 pushd ${TMPDIR} > /dev/null
-mkdir -p /opt/${PRODUCT}/bin
+if ! mkdir -p /opt/${PRODUCT}/bin; then
+	echo "Unable to create /opt/${PRODUCT}/bin. Trying with sudo..."
+	sudo mkdir -p /opt/${PRODUCT}/bin
+fi
 wget -q ${URL} -O ${PRODUCT}.zip
 unzip -q ${PRODUCT}.zip
-mv ${PRODUCT} /opt/${PRODUCT}/bin/${PRODUCT}-v${VERSION}
+if ! mv ${PRODUCT} /opt/${PRODUCT}/bin/${PRODUCT}-v${VERSION}; then
+	echo "Unable to move downloaded file to /opt/${PRODUCT}/bin/${PRODUCT}-v${VERSION}. Trying with sudo..."
+	sudo mv ${PRODUCT} /opt/${PRODUCT}/bin/${PRODUCT}-v${VERSION}
+fi
 popd > /dev/null
 rm -rf ${TMPDIR}
 maybeCreateSymlink
